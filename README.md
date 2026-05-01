@@ -6,6 +6,7 @@ Base Game · Shattered Space · Terran Armada · Trackers Alliance · All Offici
 
 > Current as of **CAO Starfield Update 1.16.236** – April 7, 2026
 
+Version 1.10
 ---
 
 <p align="center">
@@ -29,7 +30,6 @@ A standalone desktop tool for searching, browsing, and exporting Starfield item 
 ---
 
 ## Getting Started
-Note: The in-code name is AstralCodex, the project and exe name on the nexus is StarfieldItemCodex. Will sort out later, they are the same. 
 
 ### Option A: Run the Pre-Built Executable (Recommended)
 
@@ -51,10 +51,10 @@ If you'd rather run the `.py` directly:
    ```
    pip install customtkinter openpyxl
    ```
-3. Make sure `FormID_List.xlsx` is in the same folder as `AstralCodex.py`
+3. Make sure `FormID_List.xlsx` is in the same folder as `StarfieldItemCodex.py`
 4. Run it:
    ```
-   python AstralCodex.py
+   python StarfieldItemCodex.py
    ```
 
 ---
