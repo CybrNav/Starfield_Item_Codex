@@ -33,7 +33,7 @@ Note: The in-code name is AstralCodex, the project and exe name on the nexus is 
 
 ### Option A: Run the Pre-Built Executable (Recommended)
 
-1. Download the latest release
+1. https://www.nexusmods.com/starfield/mods/16886
 2. Extract the `.zip` somewhere convenient
 3. **Read `HOWTO_VERIFY_SAFE.txt`** - it explains how to verify the `.exe` is clean
 4. Make sure `FormID_List.xlsx` is in the **same folder** as `StarfieldItemCodex.exe`
