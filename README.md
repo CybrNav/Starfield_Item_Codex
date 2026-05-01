@@ -100,4 +100,4 @@ Built with Python and Excel - because Excel is the best kind of database.
 
 ## License
 
-Feel free to use and modify for personal use. If you redistribute or build on this, a credit back would be appreciated.
+This project is licensed under the [MIT License](LICENSE).
