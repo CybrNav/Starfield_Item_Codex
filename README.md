@@ -86,13 +86,6 @@ Full feature list and screenshots on Nexus Mods:
 
 **[Starfield Item Codex on Nexus Mods](https://www.nexusmods.com/starfield/mods/16886)**
 
----
-
-## Is the .exe Safe?
-
-See `HOWTO_VERIFY_SAFE.txt` included in every release. It walks you through verifying the executable yourself.
-
-The full source code is right here in this repo - the `.exe` is just this Python script compiled with PyInstaller. Nothing hidden, nothing phoning home.
 
 ---
 
