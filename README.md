@@ -34,7 +34,7 @@ A standalone desktop tool for searching, browsing, and exporting Starfield item 
 
 1. Download the latest release
 2. Extract the `.zip` somewhere convenient
-3. **Read `HOWTO_VERIFY_SAFE.txt`** — it explains how to verify the `.exe` is clean
+3. **Read `HOWTO_VERIFY_SAFE.txt`** - it explains how to verify the `.exe` is clean
 4. Make sure `FormID_List.xlsx` is in the **same folder** as `StarfieldItemCodex.exe`
 5. Double-click `StarfieldItemCodex.exe`
 
@@ -92,7 +92,7 @@ Full feature list and screenshots on Nexus Mods:
 
 See `HOWTO_VERIFY_SAFE.txt` included in every release. It walks you through verifying the executable yourself.
 
-The full source code is right here in this repo — the `.exe` is just this Python script compiled with PyInstaller. Nothing hidden, nothing phoning home.
+The full source code is right here in this repo - the `.exe` is just this Python script compiled with PyInstaller. Nothing hidden, nothing phoning home.
 
 ---
 
@@ -100,7 +100,7 @@ The full source code is right here in this repo — the `.exe` is just this Pyth
 
 **Developed by cybernav**
 
-Built with Python and Excel — because Excel is the best kind of database.
+Built with Python and Excel - because Excel is the best kind of database.
 
 ---
 
