@@ -29,6 +29,7 @@ A standalone desktop tool for searching, browsing, and exporting Starfield item 
 ---
 
 ## Getting Started
+Note: The in-code name is AstralCodex, the project and exe name on the nexus is StarfieldItemCodex. Will sort out later, they are the same. 
 
 ### Option A: Run the Pre-Built Executable (Recommended)
 
