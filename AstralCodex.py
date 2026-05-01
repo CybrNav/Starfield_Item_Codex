@@ -1,9 +1,10 @@
-#!/usr/bin/env python3
+##!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# AstralCodex.py - Starfield item database tool for AstralUI
-# hereby renamed to StarfieldItemCodex.py bc I LOVE scope creep
+# StarfieldItemCodex.py - Starfield item database tool
+# (formerly AstralCodex.py, renamed bc it outgrew just astral ui)
 # needs: customtkinter, openpyxl
 # drop next to FormID_List.xlsx and run it
+# Current version: 1.10
 
 from __future__ import annotations
 
@@ -27,8 +28,8 @@ ctk.set_default_color_theme("blue")
 
 ## constants ##
 APP_TITLE    = "Starfield Item Codex"
-APP_W, APP_H = 1280, 800
-MIN_W, MIN_H = 1100, 700
+APP_W, APP_H = 1660, 920
+MIN_W, MIN_H = 1430, 805
 XLSX_NAME    = "FormID_List.xlsx"
 REQ_HEADERS  = {"Category", "SubCategory", "Name", "FormID", "EditorID", "Source"}
 PAD          = 10
@@ -49,9 +50,10 @@ VARIABLE_ESMS = frozenset({
 })
 
 # column definitions for each tab's treeview
-LOOKUP_COLS   = ("category", "subcategory", "name", "form_id", "editor_id", "source")
-LOOKUP_HEADS  = ("Category", "SubCategory", "Name", "FormID", "EditorID", "Source")
-LOOKUP_WIDTHS = (110, 130, 220, 110, 185, 110)
+# first column is a tiny checkbox indicator (added to right panel or not)
+LOOKUP_COLS   = ("added", "category", "subcategory", "name", "form_id", "editor_id", "source")
+LOOKUP_HEADS  = ("", "Category", "SubCategory", "Name", "FormID", "EditorID", "Source")
+LOOKUP_WIDTHS = (30, 110, 130, 220, 110, 185, 110)
 
 # subcategory builder right panel
 BLDR_COLS   = ("name", "form_id")
@@ -158,6 +160,7 @@ _EN = {
     "ini_preview":    "INI Preview:",
     "batch_items":    "Batch Items",
     "set_all_qty":    "Set All Qty:",
+    "set_sel_qty":    "Set Selected Qty:",
     "entire_cat":     "Entire Category:",
     "entire_subcat":  "Entire SubCategory:",
     # column headers
@@ -209,6 +212,8 @@ _EN = {
     "batch_saved":    "Batch file saved: {f}",
     "cmds_copied":    "Copied {n} console command(s) to clipboard",
     "qty_set":        "Set all quantities to {n}",
+    "qty_set_sel":    "Set {c} selected to qty {n}",
+    "no_sel_for_qty": "No items selected in the batch list",
     "add_to_enable":  "Add items to enable output",
     "n_ready":        "{n} item(s) ready",
     "name_autofixed": "Subcategory name was auto-fixed (spaces to underscores, stripped invalid chars)",
@@ -249,6 +254,15 @@ _EN = {
     "nothing_to_copy":"Nothing to copy - other list is empty",
     # preview placeholder
     "preview_ph":     "(enter a name and add items to see the INI line)",
+    # paste existing subcategory
+    "paste_existing":  "Paste Existing Subcategory",
+    "paste_dlg_title": "Paste Existing Subcategory",
+    "paste_dlg_instr": "Paste one or more INI subcategory lines below:\ne.g. My_Weapons=0x002C5884,0x002995A3,...",
+    "paste_dlg_add":   "Add",
+    "paste_dlg_cancel": "Cancel",
+    "paste_imported":  "Imported {n} item(s) from pasted subcategory ({u} unknown)",
+    "paste_empty":     "Nothing to import - paste a subcategory line first",
+    "paste_no_fids":   "No valid FormIDs found in pasted text",
     # hardcoded filter
     "hardcoded_only": "Only Show Hardcoded FormIDs",
     # loaded status
@@ -274,6 +288,7 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "ini_preview":    "INI-Vorschau:",
         "batch_items":    "Batch-Gegenstande",
         "set_all_qty":    "Alle Mengen setzen:",
+        "set_sel_qty":    "Auswahl Menge:",
         "entire_cat":     "Ganze Kategorie:",
         "entire_subcat":  "Ganze Unterkategorie:",
         "col_category":   "Kategorie",
@@ -320,6 +335,8 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "batch_saved":    "Batch-Datei gespeichert: {f}",
         "cmds_copied":    "{n} Konsolenbefehl(e) in Zwischenablage kopiert",
         "qty_set":        "Alle Mengen auf {n} gesetzt",
+        "qty_set_sel":    "{c} ausgewahlte auf Menge {n} gesetzt",
+        "no_sel_for_qty": "Keine Gegenstande in der Batch-Liste ausgewahlt",
         "add_to_enable":  "Gegenstande hinzufugen um Ausgabe zu aktivieren",
         "n_ready":        "{n} Gegenstand/Gegenstande bereit",
         "name_autofixed": "Name wurde automatisch korrigiert (Leerzeichen zu Unterstrichen)",
@@ -346,6 +363,14 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "loading_title":  "Starfield Item Codex",
         "loading_msg":    "Lade Starfield-Gegenstands-Datenbank...",
         "preview_ph":     "(Name eingeben und Gegenstande hinzufugen)",
+        "paste_existing":  "Bestehende Unterkategorie einfugen",
+        "paste_dlg_title": "Bestehende Unterkategorie einfugen",
+        "paste_dlg_instr": "Fuge eine oder mehrere INI-Unterkategorie-Zeilen ein:\nz.B. Meine_Waffen=0x002C5884,0x002995A3,...",
+        "paste_dlg_add":   "Hinzufugen",
+        "paste_dlg_cancel": "Abbrechen",
+        "paste_imported":  "{n} Gegenstand/Gegenstande aus eingefugter Unterkategorie importiert ({u} unbekannt)",
+        "paste_empty":     "Nichts zu importieren - fuge zuerst eine Unterkategorie-Zeile ein",
+        "paste_no_fids":   "Keine gultigen FormIDs im eingefugten Text gefunden",
         "hardcoded_only": "Nur feste FormIDs",
         "loaded_status":  "{total} Gegenstande in {langs} Sprache(n) geladen",
         "load_failed":    "Laden fehlgeschlagen - {e}",
@@ -366,6 +391,7 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "ini_preview":    "Vista previa INI:",
         "batch_items":    "Objetos del Batch",
         "set_all_qty":    "Cantidad para todos:",
+        "set_sel_qty":    "Cantidad seleccion:",
         "entire_cat":     "Categoria completa:",
         "entire_subcat":  "Subcategoria completa:",
         "col_category":   "Categoria",
@@ -412,6 +438,8 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "batch_saved":    "Archivo batch guardado: {f}",
         "cmds_copied":    "{n} comando(s) de consola copiado(s)",
         "qty_set":        "Todas las cantidades establecidas a {n}",
+        "qty_set_sel":    "{c} seleccionados a cantidad {n}",
+        "no_sel_for_qty": "No hay objetos seleccionados en la lista",
         "add_to_enable":  "Agrega objetos para habilitar la salida",
         "n_ready":        "{n} objeto(s) listo(s)",
         "name_autofixed": "Nombre corregido automaticamente (espacios a guiones bajos)",
@@ -438,6 +466,14 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "loading_title":  "Starfield Item Codex",
         "loading_msg":    "Cargando base de datos de objetos de Starfield...",
         "preview_ph":     "(ingresa un nombre y agrega objetos para ver la linea INI)",
+        "paste_existing":  "Pegar subcategoria existente",
+        "paste_dlg_title": "Pegar subcategoria existente",
+        "paste_dlg_instr": "Pega una o mas lineas de subcategoria INI abajo:\nej. Mis_Armas=0x002C5884,0x002995A3,...",
+        "paste_dlg_add":   "Agregar",
+        "paste_dlg_cancel": "Cancelar",
+        "paste_imported":  "{n} objeto(s) importado(s) de subcategoria pegada ({u} desconocido(s))",
+        "paste_empty":     "Nada que importar - pega primero una linea de subcategoria",
+        "paste_no_fids":   "No se encontraron FormIDs validos en el texto pegado",
         "hardcoded_only": "Solo FormIDs fijos",
         "loaded_status":  "{total} objetos cargados en {langs} idioma(s)",
         "load_failed":    "Error de carga - {e}",
@@ -458,6 +494,7 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "ini_preview":    "Apercu INI :",
         "batch_items":    "Objets du batch",
         "set_all_qty":    "Quantite pour tous :",
+        "set_sel_qty":    "Quantite selection :",
         "entire_cat":     "Categorie entiere :",
         "entire_subcat":  "Sous-categorie entiere :",
         "col_category":   "Categorie",
@@ -504,6 +541,8 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "batch_saved":    "Fichier batch enregistre : {f}",
         "cmds_copied":    "{n} commande(s) console copiee(s)",
         "qty_set":        "Toutes les quantites definies a {n}",
+        "qty_set_sel":    "{c} selectionnes a quantite {n}",
+        "no_sel_for_qty": "Aucun objet selectionne dans la liste",
         "add_to_enable":  "Ajoutez des objets pour activer la sortie",
         "n_ready":        "{n} objet(s) pret(s)",
         "name_autofixed": "Nom corrige automatiquement (espaces en tirets bas)",
@@ -530,6 +569,14 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "loading_title":  "Starfield Item Codex",
         "loading_msg":    "Chargement de la base de donnees Starfield...",
         "preview_ph":     "(entrez un nom et ajoutez des objets pour voir la ligne INI)",
+        "paste_existing":  "Coller une sous-categorie existante",
+        "paste_dlg_title": "Coller une sous-categorie existante",
+        "paste_dlg_instr": "Collez une ou plusieurs lignes de sous-categorie INI ci-dessous :\nex. Mes_Armes=0x002C5884,0x002995A3,...",
+        "paste_dlg_add":   "Ajouter",
+        "paste_dlg_cancel": "Annuler",
+        "paste_imported":  "{n} objet(s) importe(s) depuis la sous-categorie collee ({u} inconnu(s))",
+        "paste_empty":     "Rien a importer - collez d'abord une ligne de sous-categorie",
+        "paste_no_fids":   "Aucun FormID valide trouve dans le texte colle",
         "hardcoded_only": "FormIDs fixes uniquement",
         "loaded_status":  "{total} objets charges dans {langs} langue(s)",
         "load_failed":    "Echec du chargement - {e}",
@@ -550,6 +597,7 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "ini_preview":    "Anteprima INI:",
         "batch_items":    "Oggetti Batch",
         "set_all_qty":    "Imposta tutte le quantita:",
+        "set_sel_qty":    "Quantita selezione:",
         "entire_cat":     "Categoria intera:",
         "entire_subcat":  "Sottocategoria intera:",
         "col_category":   "Categoria",
@@ -596,6 +644,8 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "batch_saved":    "File batch salvato: {f}",
         "cmds_copied":    "{n} comando/i console copiato/i",
         "qty_set":        "Tutte le quantita impostate a {n}",
+        "qty_set_sel":    "{c} selezionati a quantita {n}",
+        "no_sel_for_qty": "Nessun oggetto selezionato nella lista",
         "add_to_enable":  "Aggiungi oggetti per abilitare l'output",
         "n_ready":        "{n} oggetto/i pronto/i",
         "name_autofixed": "Nome corretto automaticamente (spazi in trattini bassi)",
@@ -622,6 +672,14 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "loading_title":  "Starfield Item Codex",
         "loading_msg":    "Caricamento database oggetti Starfield...",
         "preview_ph":     "(inserisci un nome e aggiungi oggetti per vedere la riga INI)",
+        "paste_existing":  "Incolla sottocategoria esistente",
+        "paste_dlg_title": "Incolla sottocategoria esistente",
+        "paste_dlg_instr": "Incolla una o piu righe di sottocategoria INI qui sotto:\nes. Le_Mie_Armi=0x002C5884,0x002995A3,...",
+        "paste_dlg_add":   "Aggiungi",
+        "paste_dlg_cancel": "Annulla",
+        "paste_imported":  "{n} oggetto/i importato/i dalla sottocategoria incollata ({u} sconosciuto/i)",
+        "paste_empty":     "Niente da importare - incolla prima una riga di sottocategoria",
+        "paste_no_fids":   "Nessun FormID valido trovato nel testo incollato",
         "hardcoded_only": "Solo FormID fissi",
         "loaded_status":  "{total} oggetti caricati in {langs} lingua/e",
         "load_failed":    "Caricamento fallito - {e}",
@@ -642,6 +700,7 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "ini_preview":    "INIプレビュー:",
         "batch_items":    "バッチアイテム",
         "set_all_qty":    "全数量を設定:",
+        "set_sel_qty":    "選択数量:",
         "entire_cat":     "カテゴリ全体:",
         "entire_subcat":  "サブカテゴリ全体:",
         "col_category":   "カテゴリ",
@@ -688,6 +747,8 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "batch_saved":    "バッチファイルを保存しました: {f}",
         "cmds_copied":    "{n}件のコンソールコマンドをコピーしました",
         "qty_set":        "全数量を{n}に設定しました",
+        "qty_set_sel":    "{c}個を数量{n}に設定",
+        "no_sel_for_qty": "バッチリストでアイテムが選択されていません",
         "add_to_enable":  "アイテムを追加して出力を有効にしてください",
         "n_ready":        "{n}件準備完了",
         "name_autofixed": "名前を自動修正しました (スペースをアンダースコアに変換)",
@@ -714,6 +775,14 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "loading_title":  "Starfield Item Codex",
         "loading_msg":    "Starfieldアイテムデータベースを読み込み中...",
         "preview_ph":     "(名前を入力してアイテムを追加するとINI行が表示されます)",
+        "paste_existing":  "既存サブカテゴリを貼り付け",
+        "paste_dlg_title": "既存サブカテゴリを貼り付け",
+        "paste_dlg_instr": "INIサブカテゴリ行を以下に貼り付けてください:\n例: My_Weapons=0x002C5884,0x002995A3,...",
+        "paste_dlg_add":   "追加",
+        "paste_dlg_cancel": "キャンセル",
+        "paste_imported":  "貼り付けたサブカテゴリから{n}件をインポートしました ({u}件不明)",
+        "paste_empty":     "インポートするものがありません - 先にサブカテゴリ行を貼り付けてください",
+        "paste_no_fids":   "貼り付けたテキストに有効なFormIDが見つかりません",
         "hardcoded_only": "固定FormIDのみ",
         "loaded_status":  "{langs}言語で{total}件のアイテムを読み込みました",
         "load_failed":    "読み込み失敗 - {e}",
@@ -734,6 +803,7 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "ini_preview":    "Podglad INI:",
         "batch_items":    "Przedmioty Batch",
         "set_all_qty":    "Ustaw wszystkie ilosci:",
+        "set_sel_qty":    "Ustaw ilosc wybranych:",
         "entire_cat":     "Cala Kategoria:",
         "entire_subcat":  "Cala Podkategoria:",
         "col_category":   "Kategoria",
@@ -780,6 +850,8 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "batch_saved":    "Plik batch zapisany: {f}",
         "cmds_copied":    "Skopiowano {n} komend(e) konsoli do schowka",
         "qty_set":        "Wszystkie ilosci ustawione na {n}",
+        "qty_set_sel":    "{c} wybranych ustawionych na ilosc {n}",
+        "no_sel_for_qty": "Nie wybrano przedmiotow na liscie batch",
         "add_to_enable":  "Dodaj przedmioty aby aktywowac wyjscie",
         "n_ready":        "{n} przedmiot(ow) gotowych",
         "name_autofixed": "Nazwa automatycznie poprawiona (spacje na podkreslenia)",
@@ -806,6 +878,14 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "loading_title":  "Starfield Item Codex",
         "loading_msg":    "Ladowanie bazy danych przedmiotow Starfield...",
         "preview_ph":     "(wpisz nazwe i dodaj przedmioty aby zobaczyc linie INI)",
+        "paste_existing":  "Wklej istniejaca podkategorie",
+        "paste_dlg_title": "Wklej istniejaca podkategorie",
+        "paste_dlg_instr": "Wklej jedna lub wiecej linii podkategorii INI ponizej:\nnp. Moje_Bronie=0x002C5884,0x002995A3,...",
+        "paste_dlg_add":   "Dodaj",
+        "paste_dlg_cancel": "Anuluj",
+        "paste_imported":  "Zaimportowano {n} przedmiot(ow) z wklejonej podkategorii ({u} nieznanych)",
+        "paste_empty":     "Nic do importu - najpierw wklej linie podkategorii",
+        "paste_no_fids":   "Nie znaleziono prawidlowych FormID w wklejonym tekscie",
         "hardcoded_only": "Tylko stale FormID",
         "loaded_status":  "Zaladowano {total} przedmiotow w {langs} jezyku/ach",
         "load_failed":    "Ladowanie nieudane - {e}",
@@ -826,6 +906,7 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "ini_preview":    "Previa INI:",
         "batch_items":    "Itens do Batch",
         "set_all_qty":    "Definir todas as quantidades:",
+        "set_sel_qty":    "Qtd. selecionados:",
         "entire_cat":     "Categoria inteira:",
         "entire_subcat":  "Subcategoria inteira:",
         "col_category":   "Categoria",
@@ -872,6 +953,8 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "batch_saved":    "Arquivo batch salvo: {f}",
         "cmds_copied":    "{n} comando(s) de console copiado(s)",
         "qty_set":        "Todas as quantidades definidas para {n}",
+        "qty_set_sel":    "{c} selecionados para quantidade {n}",
+        "no_sel_for_qty": "Nenhum item selecionado na lista batch",
         "add_to_enable":  "Adicione itens para habilitar a saida",
         "n_ready":        "{n} item(ns) pronto(s)",
         "name_autofixed": "Nome corrigido automaticamente (espacos para underscores)",
@@ -898,6 +981,14 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "loading_title":  "Starfield Item Codex",
         "loading_msg":    "Carregando banco de dados de itens do Starfield...",
         "preview_ph":     "(digite um nome e adicione itens para ver a linha INI)",
+        "paste_existing":  "Colar subcategoria existente",
+        "paste_dlg_title": "Colar subcategoria existente",
+        "paste_dlg_instr": "Cole uma ou mais linhas de subcategoria INI abaixo:\nex. Minhas_Armas=0x002C5884,0x002995A3,...",
+        "paste_dlg_add":   "Adicionar",
+        "paste_dlg_cancel": "Cancelar",
+        "paste_imported":  "{n} item(ns) importado(s) da subcategoria colada ({u} desconhecido(s))",
+        "paste_empty":     "Nada para importar - cole primeiro uma linha de subcategoria",
+        "paste_no_fids":   "Nenhum FormID valido encontrado no texto colado",
         "hardcoded_only": "Apenas FormIDs fixos",
         "loaded_status":  "{total} itens carregados em {langs} idioma(s)",
         "load_failed":    "Falha no carregamento - {e}",
@@ -918,6 +1009,7 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "ini_preview":    "INI预览:",
         "batch_items":    "批处理物品",
         "set_all_qty":    "设置所有数量:",
+        "set_sel_qty":    "设置选中数量:",
         "entire_cat":     "整个分类:",
         "entire_subcat":  "整个子分类:",
         "col_category":   "分类",
@@ -964,6 +1056,8 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "batch_saved":    "批处理文件已保存: {f}",
         "cmds_copied":    "已复制{n}条控制台命令到剪贴板",
         "qty_set":        "所有数量已设置为{n}",
+        "qty_set_sel":    "已将{c}个选中项设置为数量{n}",
+        "no_sel_for_qty": "未在批处理列表中选择物品",
         "add_to_enable":  "添加物品以启用输出",
         "n_ready":        "{n}个物品就绪",
         "name_autofixed": "名称已自动修正 (空格转为下划线)",
@@ -990,6 +1084,14 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "loading_title":  "Starfield Item Codex",
         "loading_msg":    "正在加载星空物品数据库...",
         "preview_ph":     "(输入名称并添加物品以查看INI行)",
+        "paste_existing":  "粘贴现有子分类",
+        "paste_dlg_title": "粘贴现有子分类",
+        "paste_dlg_instr": "在下方粘贴一行或多行INI子分类行:\n例如: My_Weapons=0x002C5884,0x002995A3,...",
+        "paste_dlg_add":   "添加",
+        "paste_dlg_cancel": "取消",
+        "paste_imported":  "从粘贴的子分类导入了{n}个物品 ({u}个未知)",
+        "paste_empty":     "没有可导入的内容 - 请先粘贴子分类行",
+        "paste_no_fids":   "在粘贴的文本中未找到有效的FormID",
         "hardcoded_only": "仅显示固定FormID",
         "loaded_status":  "已加载{langs}种语言的{total}个物品",
         "load_failed":    "加载失败 - {e}",
@@ -1176,7 +1278,11 @@ class DarkTreeview(tk.Frame):
         for col, head, w in zip(columns, headings, widths):
             self.tree.heading(col, text=head,
                               command=lambda c=col: self._sort_by(c))
-            self.tree.column(col, width=w, minwidth=50)
+            # checkbox column stays tiny and non-resizable
+            if col == "added":
+                self.tree.column(col, width=w, minwidth=w, stretch=False, anchor="center")
+            else:
+                self.tree.column(col, width=w, minwidth=50)
 
         self.tree.tag_configure("even", background=TV_BG)
         self.tree.tag_configure("odd",  background=TV_ALT)
@@ -1186,6 +1292,9 @@ class DarkTreeview(tk.Frame):
     # sorting
 
     def _sort_by(self, col: str) -> None:
+        # don't sort the checkbox column
+        if col == "added":
+            return
         if self._sort_col == col:
             self._sort_rev = not self._sort_rev
         else:
@@ -1285,7 +1394,7 @@ class LoadingOverlay(ctk.CTkFrame):
 class SearchPanel(ctk.CTkFrame):
     """Search box, category/subcategory dropdowns, and results treeview. Shared across all tabs."""
 
-    def __init__(self, parent: tk.Widget, app: "AstralCodexApp", **kw: Any) -> None:
+    def __init__(self, parent: tk.Widget, app: "StarfieldItemCodexApp", **kw: Any) -> None:
         super().__init__(parent, fg_color="transparent", **kw)
         self.app = app
         self._all_data: Dict[str, List[Item]] = {}
@@ -1296,6 +1405,15 @@ class SearchPanel(ctk.CTkFrame):
         self._search_var = tk.StringVar()
         self._cat_var    = tk.StringVar(value=t("all_cat"))
         self._subcat_var = tk.StringVar(value=t("all_subcat"))
+
+        # which columns the search bar checks (defaults match original behavior)
+        self._srch_name      = tk.BooleanVar(value=True)
+        self._srch_formid    = tk.BooleanVar(value=True)
+        self._srch_editorid  = tk.BooleanVar(value=True)
+        self._srch_category  = tk.BooleanVar(value=False)
+        self._srch_subcategory = tk.BooleanVar(value=False)
+        self._srch_source    = tk.BooleanVar(value=False)
+
         self._build_ui()
 
         self._search_var.trace_add("write", lambda *_: self._apply_filter())
@@ -1308,6 +1426,35 @@ class SearchPanel(ctk.CTkFrame):
 
         self._search_lbl = ctk.CTkLabel(r0, text=t("search"), width=54, anchor="w")
         self._search_lbl.pack(side="left")
+
+        # dropdown to pick which columns the search bar filters on
+        self._col_filter_btn = ctk.CTkButton(
+            r0, text="\u25BC", width=28, height=28,
+            command=self._show_col_filter_menu)
+        self._col_filter_btn.pack(side="left", padx=(2, 0))
+        self._col_filter_menu = tk.Menu(
+            r0, tearoff=0,
+            bg="#2b2b2b", fg="#DCE4EE",
+            activebackground=TV_SEL, activeforeground="white", bd=0)
+        self._col_filter_menu.add_checkbutton(
+            label="Name", variable=self._srch_name,
+            command=self._apply_filter)
+        self._col_filter_menu.add_checkbutton(
+            label="FormID", variable=self._srch_formid,
+            command=self._apply_filter)
+        self._col_filter_menu.add_checkbutton(
+            label="EditorID", variable=self._srch_editorid,
+            command=self._apply_filter)
+        self._col_filter_menu.add_checkbutton(
+            label="Category", variable=self._srch_category,
+            command=self._apply_filter)
+        self._col_filter_menu.add_checkbutton(
+            label="SubCategory", variable=self._srch_subcategory,
+            command=self._apply_filter)
+        self._col_filter_menu.add_checkbutton(
+            label="Source", variable=self._srch_source,
+            command=self._apply_filter)
+
         self.search_entry = ctk.CTkEntry(
             r0, textvariable=self._search_var,
             placeholder_text=t("search_ph"))
@@ -1333,7 +1480,7 @@ class SearchPanel(ctk.CTkFrame):
         self.subcat_cb.pack(side="left", padx=(4, 0))
 
         self.tv = DarkTreeview(self, LOOKUP_COLS,
-                                (t("col_category"), t("col_subcategory"), t("col_name"),
+                                ("", t("col_category"), t("col_subcategory"), t("col_name"),
                                  t("col_formid"), t("col_editorid"), t("col_source")),
                                 LOOKUP_WIDTHS, selectmode="extended")
         self.tv.pack(fill="both", expand=True, padx=PAD, pady=(0, 4))
@@ -1359,7 +1506,7 @@ class SearchPanel(ctk.CTkFrame):
         self._subcat_lbl.configure(text=t("subcategory"))
         self.search_entry.configure(placeholder_text=t("search_ph"))
 
-        self.tv.set_headings((t("col_category"), t("col_subcategory"), t("col_name"),
+        self.tv.set_headings(("", t("col_category"), t("col_subcategory"), t("col_name"),
                               t("col_formid"), t("col_editorid"), t("col_source")))
         self._load_current_lang()
 
@@ -1373,7 +1520,8 @@ class SearchPanel(ctk.CTkFrame):
         fid_map = {it.form_id: it for it in self._filtered}
         result = []
         for row in sel:
-            fid = str(row[3]) if len(row) > 3 else ""
+            # col 0 is the checkbox indicator, formid is at index 4
+            fid = str(row[4]) if len(row) > 4 else ""
             if fid in fid_map:
                 result.append(fid_map[fid])
         return result
@@ -1395,6 +1543,13 @@ class SearchPanel(ctk.CTkFrame):
         return sorted({it.subcategory for it in self._items
                        if it.category == category and it.subcategory})
 
+
+    def _show_col_filter_menu(self) -> None:
+        """pop the column-filter checkbutton menu below the arrow button."""
+        btn = self._col_filter_btn
+        x = btn.winfo_rootx()
+        y = btn.winfo_rooty() + btn.winfo_height()
+        self._col_filter_menu.tk_popup(x, y)
 
     def _on_cat_change(self) -> None:
         self._rebuild_subcat_cb()
@@ -1431,18 +1586,27 @@ class SearchPanel(ctk.CTkFrame):
         if subcat != all_subcat_label:
             result = [it for it in result if it.subcategory == subcat]
         if query:
-            result = [it for it in result
-                      if query in it.name.lower()
-                      or query in it.form_id.lower()
-                      or query in it.editor_id.lower()]
+            # check only the columns the user has enabled in the filter menu
+            checks = []
+            if self._srch_name.get():        checks.append(lambda it: query in it.name.lower())
+            if self._srch_formid.get():      checks.append(lambda it: query in it.form_id.lower())
+            if self._srch_editorid.get():    checks.append(lambda it: query in it.editor_id.lower())
+            if self._srch_category.get():    checks.append(lambda it: query in it.category.lower())
+            if self._srch_subcategory.get(): checks.append(lambda it: query in it.subcategory.lower())
+            if self._srch_source.get():      checks.append(lambda it: query in it.source.lower())
+            if checks:
+                result = [it for it in result if any(fn(it) for fn in checks)]
+            else:
+                # nothing checked = nothing matches
+                result = []
 
         self._filtered = result
         af = self._added_fids
-        rows = [(it.category, it.subcategory,
-                 ("\u2705 " + it.name) if it.form_id in af else it.name,
+        rows = [("\u2611" if it.form_id in af else "\u2610",
+                 it.category, it.subcategory, it.name,
                  it.form_id, it.editor_id, it.source)
                 for it in result]
-        self.tv.populate(rows, added_fids=af, fid_col_idx=3)
+        self.tv.populate(rows, added_fids=af, fid_col_idx=4)
 
         n = len(result)
         if n == 1:
@@ -1458,7 +1622,7 @@ class SearchPanel(ctk.CTkFrame):
 class LookupTab:
     """Tab 1: full-width search panel with right-click context menu."""
 
-    def __init__(self, frame: ctk.CTkFrame, app: "AstralCodexApp") -> None:
+    def __init__(self, frame: ctk.CTkFrame, app: "StarfieldItemCodexApp") -> None:
         self.app = app
         self.frame = frame
 
@@ -1495,7 +1659,7 @@ class LookupTab:
         sel = self.panel.tv.get_selected()
         if not sel:
             return
-        fid = str(sel[0][3])
+        fid = str(sel[0][4])
         if clipboard_set(self.app, fid):
             self.app.set_status(t("copied_fid", fid=fid))
         else:
@@ -1514,7 +1678,7 @@ class LookupTab:
         sel = self.panel.tv.get_selected()
         if not sel:
             return
-        fid = str(sel[0][3])
+        fid = str(sel[0][4])
         clipboard_set(self.app, fid)
         self.app.set_status(t("copied_fid", fid=fid))
 
@@ -1522,7 +1686,7 @@ class LookupTab:
         sel = self.panel.tv.get_selected()
         if not sel:
             return
-        fid = str(sel[0][3])
+        fid = str(sel[0][4])
         cmd = f"player.additem {fid} 1"
         clipboard_set(self.app, cmd)
         self.app.set_status(t("copied_cmd", cmd=cmd))
@@ -1531,7 +1695,8 @@ class LookupTab:
         sel = self.panel.tv.get_selected()
         if not sel:
             return
-        row_text = "\t".join(str(v) for v in sel[0])
+        # skip col 0 (checkbox indicator) when copying
+        row_text = "\t".join(str(v) for v in sel[0][1:])
         clipboard_set(self.app, row_text)
         self.app.set_status(t("copied_row"))
 
@@ -1541,7 +1706,7 @@ class LookupTab:
 class SubcategoryBuilderTab:
     """Left search panel + right subcategory builder. Outputs an INI line."""
 
-    def __init__(self, frame: ctk.CTkFrame, app: "AstralCodexApp") -> None:
+    def __init__(self, frame: ctk.CTkFrame, app: "StarfieldItemCodexApp") -> None:
         self.app = app
         self.frame = frame
         self._subcat_items: List[Item] = []
@@ -1560,7 +1725,8 @@ class SubcategoryBuilderTab:
         self._name_var.trace_add("write", lambda *_: self._on_name_change())
         self._name_entry = ctk.CTkEntry(
             name_row, textvariable=self._name_var, width=320,
-            placeholder_text=t("name_ph"))
+            placeholder_text=t("name_ph"),
+            border_color="#b22222")  # red border until a name is entered
         self._name_entry.pack(side="left", padx=(8, 0))
 
         # output area: pack first (bottom) so it always shows
@@ -1675,6 +1841,119 @@ class SubcategoryBuilderTab:
         if added:
             self.app.set_status(t("copied_from_batch", n=added))
 
+    def _paste_existing_subcategory(self) -> None:
+        """open a popup for pasting existing subcategory lines from an ini."""
+        dlg = ctk.CTkToplevel(self.app)
+        dlg.title(t("paste_dlg_title"))
+        dlg.resizable(True, True)
+        dlg.transient(self.app)
+        dlg.grab_set()
+
+        # center the dialog over the main window
+        dlg_w, dlg_h = 600, 280
+        app_x = self.app.winfo_x()
+        app_y = self.app.winfo_y()
+        app_w = self.app.winfo_width()
+        app_h = self.app.winfo_height()
+        x = app_x + (app_w - dlg_w) // 2
+        y = app_y + (app_h - dlg_h) // 2
+        dlg.geometry(f"{dlg_w}x{dlg_h}+{x}+{y}")
+
+        ctk.CTkLabel(dlg, text=t("paste_dlg_instr"), anchor="w",
+                     justify="left").pack(fill="x", padx=12, pady=(12, 4))
+
+        textbox = ctk.CTkTextbox(dlg, width=560, height=160,
+                                  font=ctk.CTkFont(family="Courier New", size=12))
+        textbox.pack(fill="both", expand=True, padx=12, pady=4)
+
+        btn_row = ctk.CTkFrame(dlg, fg_color="transparent")
+        btn_row.pack(fill="x", padx=12, pady=(4, 12))
+
+        def on_add() -> None:
+            raw = textbox.get("1.0", "end").strip()
+            if not raw:
+                self.app.set_status(t("paste_empty"))
+                dlg.destroy()
+                return
+            self._parse_and_import_subcategory(raw)
+            dlg.destroy()
+
+        ctk.CTkButton(btn_row, text=t("paste_dlg_add"), width=100,
+                      command=on_add).pack(side="left", padx=(0, 8))
+        ctk.CTkButton(btn_row, text=t("paste_dlg_cancel"), width=100,
+                      fg_color="#5a1e1e", hover_color="#7a2a2a",
+                      command=dlg.destroy).pack(side="left")
+
+        # focus the textbox so user can paste immediately
+        textbox.focus_set()
+
+    def _parse_and_import_subcategory(self, raw: str) -> None:
+        """parse pasted ini lines and add their formids to the builder list."""
+        # build a lookup from the current language's items for fast formid resolution
+        fid_lookup: Dict[str, Item] = {}
+        items = self.panel._all_data.get(_current_lang, [])
+        for it in items:
+            fid_lookup[it.form_id.lower()] = it
+
+        parsed_name: str | None = None
+        all_fids: List[str] = []  # ordered, preserves paste order
+        seen: set = set()
+
+        for line in raw.splitlines():
+            line = line.strip()
+            if not line or line.startswith(";") or line.startswith("#"):
+                continue  # skip blanks, ini comments
+
+            # split on first '=' to get name and formid list
+            if "=" in line:
+                name_part, fid_part = line.split("=", 1)
+                name_part = name_part.strip()
+                fid_part = fid_part.strip()
+                if parsed_name is None and name_part:
+                    parsed_name = name_part
+            else:
+                fid_part = line
+
+            # split formids on comma
+            for raw_fid in fid_part.split(","):
+                fid = raw_fid.strip()
+                if not fid:
+                    continue
+                key = fid.lower()
+                if key not in seen:
+                    seen.add(key)
+                    all_fids.append(fid)
+
+        if not all_fids:
+            self.app.set_status(t("paste_no_fids"))
+            return
+
+        # set the subcategory name from the first parsed line
+        if parsed_name:
+            self._name_var.set(parsed_name)
+
+        # resolve each formid to a known item or create an unknown placeholder
+        to_add: List[Item] = []
+        unknown_count = 0
+        for fid in all_fids:
+            known = fid_lookup.get(fid.lower())
+            if known:
+                to_add.append(known)
+            else:
+                # unknown formid, probably a modded item
+                to_add.append(Item(
+                    category="",
+                    subcategory="",
+                    name=f"Unknown ({fid})",
+                    form_id=fid,
+                    editor_id="",
+                    source="",
+                ))
+                unknown_count += 1
+
+        added = self._add_items(to_add)
+        self.app.set_status(t("paste_imported", n=added, u=unknown_count))
+
     def _on_add_cat_change(self, _val: str = "") -> None:
         cat = self._add_cat_var.get()
         if cat:
@@ -1686,8 +1965,15 @@ class SubcategoryBuilderTab:
                 self._add_subcat_var.set("")
 
     def _build_right_panel(self, parent: ctk.CTkFrame) -> None:
+        # paste button sits above the header row
+        self._btn_paste = ctk.CTkButton(
+            parent, text=t("paste_existing"),
+            command=self._paste_existing_subcategory, width=220,
+            fg_color="#2a4a6b", hover_color="#3a5a7b")
+        self._btn_paste.pack(padx=PAD, pady=(PAD, 2))
+
         hdr = ctk.CTkFrame(parent, fg_color="transparent")
-        hdr.pack(fill="x", padx=PAD, pady=(PAD, 4))
+        hdr.pack(fill="x", padx=PAD, pady=(2, 4))
         self._your_subcat_lbl = ctk.CTkLabel(hdr, text=t("your_subcat"),
                                               font=ctk.CTkFont(weight="bold"))
         self._your_subcat_lbl.pack(side="left")
@@ -1725,6 +2011,7 @@ class SubcategoryBuilderTab:
         self._btn_remove.configure(text="<- " + t("remove_sel"))
         self._btn_clear.configure(text=t("clear_all"))
         self._btn_copy_batch.configure(text=t("copy_from_batch"))
+        self._btn_paste.configure(text=t("paste_existing"))
         self._your_subcat_lbl.configure(text=t("your_subcat"))
         self.bldr_tv.set_headings((t("col_name"), t("col_formid")))
         self._update_badge()
@@ -1776,6 +2063,13 @@ class SubcategoryBuilderTab:
             except Exception:
                 pass
             self.app.set_status(t("name_autofixed"))
+
+        # red border when empty, default when filled
+        if self._name_var.get().strip():
+            self._name_entry.configure(border_color="#565B5E")
+        else:
+            self._name_entry.configure(border_color="#b22222")
+
         self._update_preview()
 
     def _refresh_add_cat_dropdowns(self) -> None:
@@ -1859,7 +2153,22 @@ class SubcategoryBuilderTab:
 
     def _search_double_click(self, event: tk.Event) -> None:
         items = self.panel.get_selected_items()
-        self._add_items(items)
+        if not items:
+            return
+        # double-click toggles: remove if already added, otherwise add
+        to_add = [it for it in items if it.form_id not in self._subcat_fids]
+        to_remove = [it for it in items if it.form_id in self._subcat_fids]
+        if to_remove:
+            for it in to_remove:
+                self._subcat_items = [x for x in self._subcat_items if x.form_id != it.form_id]
+                self._subcat_fids.discard(it.form_id)
+            self.bldr_tv.populate([(it.name, it.form_id) for it in self._subcat_items])
+            self._update_badge()
+            self._update_preview()
+            self._sync_added_markers()
+            self.app.set_status(t("removed_sub", n=len(to_remove)))
+        if to_add:
+            self._add_items(to_add)
 
     def _builder_double_click(self, event: tk.Event) -> None:
         sel = self.bldr_tv.get_selected()
@@ -1880,7 +2189,7 @@ class SubcategoryBuilderTab:
 class BatchCreatorTab:
     """Search panel + batch list. Editable qtys, saves to .txt batch file."""
 
-    def __init__(self, frame: ctk.CTkFrame, app: "AstralCodexApp") -> None:
+    def __init__(self, frame: ctk.CTkFrame, app: "StarfieldItemCodexApp") -> None:
         self.app = app
         self.frame = frame
         self._batch_items: List[Item] = []
@@ -2043,6 +2352,7 @@ class BatchCreatorTab:
                                       BATCH_WIDTHS, selectmode="extended")
         self.batch_tv.pack(fill="both", expand=True, padx=PAD, pady=(0, 4))
         self.batch_tv.tree.bind("<ButtonRelease-1>", self._on_batch_click)
+        self.batch_tv.tree.bind("<Double-1>", self._batch_double_click)
 
         qty_row = ctk.CTkFrame(parent, fg_color="transparent")
         qty_row.pack(fill="x", padx=PAD, pady=(0, PAD))
@@ -2054,6 +2364,16 @@ class BatchCreatorTab:
         self._btn_apply_qty = ctk.CTkButton(qty_row, text=t("apply"), width=70,
                                              command=self._set_all_qty)
         self._btn_apply_qty.pack(side="left")
+
+        # set qty for selected items only
+        self._set_sel_qty_lbl = ctk.CTkLabel(qty_row, text=t("set_sel_qty"))
+        self._set_sel_qty_lbl.pack(side="left", padx=(20, 0))
+        self._set_sel_qty_var = tk.StringVar(value="1")
+        ctk.CTkEntry(qty_row, textvariable=self._set_sel_qty_var,
+                     width=60, justify="center").pack(side="left", padx=(6, 6))
+        self._btn_apply_sel_qty = ctk.CTkButton(qty_row, text=t("apply"), width=70,
+                                                command=self._set_selected_qty)
+        self._btn_apply_sel_qty.pack(side="left")
 
 
     def init_data(self, data: Dict[str, List[Item]], names: List[str]) -> None:
@@ -2081,6 +2401,8 @@ class BatchCreatorTab:
         self._batch_items_lbl.configure(text=t("batch_items"))
         self._set_qty_lbl.configure(text=t("set_all_qty"))
         self._btn_apply_qty.configure(text=t("apply"))
+        self._set_sel_qty_lbl.configure(text=t("set_sel_qty"))
+        self._btn_apply_sel_qty.configure(text=t("apply"))
         self.batch_tv.set_headings((t("col_name"), t("col_formid"), t("col_qty")))
         self._update_badge()
         self._refresh_output_buttons()
@@ -2274,9 +2596,63 @@ class BatchCreatorTab:
             self.batch_tv.tree.set(row_id, "qty", str(v))
         self.app.set_status(t("qty_set", n=v))
 
+    def _set_selected_qty(self) -> None:
+        """set qty only for highlighted items in the batch list."""
+        sel = self.batch_tv.tree.selection()
+        if not sel:
+            self.app.set_status(t("no_sel_for_qty"))
+            return
+        try:
+            v = max(1, int(self._set_sel_qty_var.get()))
+        except (ValueError, TypeError):
+            self.app.set_status(t("invalid_qty"))
+            return
+        self._set_sel_qty_var.set(str(v))
+        for row_id in sel:
+            fid = str(self.batch_tv.tree.set(row_id, "form_id"))
+            self._batch_qtys[fid] = v
+            self.batch_tv.tree.set(row_id, "qty", str(v))
+        self.app.set_status(t("qty_set_sel", c=len(sel), n=v))
+
     def _search_double_click(self, event: tk.Event) -> None:
         items = self.panel.get_selected_items()
-        self._add_items(items)
+        if not items:
+            return
+        # double-click toggles: remove if already added, otherwise add
+        to_add = [it for it in items if it.form_id not in self._batch_fids]
+        to_remove = [it for it in items if it.form_id in self._batch_fids]
+        if to_remove:
+            remove_fids = {it.form_id for it in to_remove}
+            self._batch_items = [x for x in self._batch_items if x.form_id not in remove_fids]
+            self._batch_fids -= remove_fids
+            for fid in remove_fids:
+                self._batch_qtys.pop(fid, None)
+            self.batch_tv.populate(
+                [(it.name, it.form_id, str(self._batch_qtys.get(it.form_id, 1)))
+                 for it in self._batch_items])
+            self._update_badge()
+            self._refresh_output_buttons()
+            self._sync_added_markers()
+            self.app.set_status(t("removed_batch", n=len(remove_fids)))
+        if to_add:
+            self._add_items(to_add)
+
+    def _batch_double_click(self, event: tk.Event) -> None:
+        """double-click on right panel removes the item."""
+        sel = self.batch_tv.get_selected()
+        if not sel:
+            return
+        fid = str(sel[0][1])
+        self._batch_items = [it for it in self._batch_items if it.form_id != fid]
+        self._batch_fids.discard(fid)
+        self._batch_qtys.pop(fid, None)
+        self.batch_tv.populate(
+            [(it.name, it.form_id, str(self._batch_qtys.get(it.form_id, 1)))
+             for it in self._batch_items])
+        self._update_badge()
+        self._refresh_output_buttons()
+        self._sync_added_markers()
+        self.app.set_status(t("removed_batch", n=1))
 
     # output
 
@@ -2337,9 +2713,9 @@ class BatchCreatorTab:
             self.app.set_status(t("clipboard_err"))
 
 
-## AstralCodexApp ##
+## StarfieldItemCodexApp ##
 
-class AstralCodexApp(ctk.CTk):
+class StarfieldItemCodexApp(ctk.CTk):
     """Main window. Three tabs, global language selector, status bar at bottom."""
 
     def __init__(self) -> None:
@@ -2562,7 +2938,7 @@ class AstralCodexApp(ctk.CTk):
 
 
 def main() -> None:
-    app = AstralCodexApp()
+    app = StarfieldItemCodexApp()
     app.mainloop()
 
 
